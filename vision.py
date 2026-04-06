@@ -76,16 +76,27 @@ class InferenceThread(threading.Thread):
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = self.model.process(rgb_frame)
 
-            if results:
-                left_hand = results.left_hand_landmarks
-                right_hand = results.right_hand_landmarks
+            
+            left_hand = results.left_hand_landmarks
+            right_hand = results.right_hand_landmarks
 
-                frame_data = FrameData(
-                    timestamp = timestamp
-                    pose_landmarks = results.pose_landmarks
-                    pose_world_landmarks = results.pose_world_landmarks
-                    face_landmarks
-                )
+            frame_data = FrameData(
+                timestamp = timestamp,
+                pose_landmarks = results.pose_landmarks,
+                pose_world_landmarks = results.pose_world_landmarks,
+                face_landmarks = results.face_landmarks,
+                left_hand = left_hand,
+                right_hand = right_hand
+            )
+
+            try:
+                self.output_queue.put_nowait(frame_data)
+            except queue.Full:
+                print("Q full inf")
+                pass
+        
+        self.model.close()
+
                 
 
 
