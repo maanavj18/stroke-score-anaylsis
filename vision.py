@@ -67,11 +67,25 @@ class InferenceThread(threading.Thread):
 
     def run(self):
         while not self._stop_event.is_set():
-            frame = self.capture_queue.get(timeout=0.1)
-            rgb_frame = cv2.cvtColor(frame)
+            try:
+                (timestamp, frame) = self.capture_queue.get(timeout=0.1)
+            except queue.Empty:
+                print("Q empty")
+                continue
+
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = self.model.process(rgb_frame)
 
             if results:
+                left_hand = results.left_hand_landmarks
+                right_hand = results.right_hand_landmarks
+
+                frame_data = FrameData(
+                    timestamp = timestamp
+                    pose_landmarks = results.pose_landmarks
+                    pose_world_landmarks = results.pose_world_landmarks
+                    face_landmarks
+                )
                 
 
 
