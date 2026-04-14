@@ -74,6 +74,7 @@ class InferenceThread(threading.Thread):
     def run(self):
 
         try:
+            
             while not self._stop_event.is_set():
                 try:
                     (timestamp, frame) = self.capture_queue.get(timeout=0.1)
