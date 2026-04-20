@@ -3,13 +3,15 @@ import numpy as np
 import mediapipe as mp
 from vision import VisionLayer
 from frame_buffer import FrameBuffer
+from arm_test import ArmTest
 
 
 def main():
     vision = VisionLayer()
     vision.start()
-    
+
     buffer = FrameBuffer()
+    arm_test = ArmTest()
 
     print("Vision layer started. Press q to quit.")
 
@@ -21,6 +23,8 @@ def main():
         if frame_data is not None and frame_data.raw_frame is not None:
             last_display = frame_data.raw_frame.copy()
             buffer.add(frame_data)
+            arm_test.update(buffer)
+            
             if frame_data.timestamp % 3 <= 0.033:
                 window = buffer.get_window(5)
                 print(f"Buffer size: {len(window)} frames | oldest: {round(window[0].timestamp % 100, 2)} | newest: {round(window[-1].timestamp % 100, 2)}")

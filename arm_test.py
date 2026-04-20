@@ -59,10 +59,35 @@ class ArmTest(BaseTest):
             if latest is None or latest.pose_world_landmarks is None:
                 return
             landmark = latest.pose_world_landmarks
+
+            wristL = position(landmark, 15)
+            wristR = position(landmark, 16)
             
+            
+            leftDrift = wristL[1] - self.baseline_left
+            rightDrift = wristR[1] - self.baseline_right
+            LRDrift = abs(leftDrift - rightDrift)
+
+            if LRDrift >= self.max_drift_diff:
+                self.max_drift_diff = LRDrift
+
             checkTime = latest.timestamp - self.start_time >= self.DURATION
-            checkFall = None
-    
+            checkEarlyDrop = abs(leftDrift) <= self.DROP_THRESHOLD and abs(rightDrift) <= self.DROP_THRESHOLD
+            
+            if not checkEarlyDrop:
+                self.score = "FAIL"
+                self.status = "COMPLETE"
+                return
+            
+            if checkTime:
+                if self.max_drift_diff <= self.DRIFT_THRESHOLD:
+                    self.score = "PASS"
+                else:
+                    self.score = "FAIL"
+                
+                self.status = "COMPLETE"
+
+                return
 
 
         else:

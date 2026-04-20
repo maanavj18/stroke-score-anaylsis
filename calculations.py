@@ -2,9 +2,8 @@ import numpy as np
 
 #Gets angle between joints
 def joint_angle(pt1, pivot, pt2):
-    v1 = np.array([pt1.x - pivot.x, pt1.y - pivot.y, pt1.z - pivot.z])
-    v2 = np.array([pt2.x - pivot.x, pt2.y - pivot.y, pt2.z - pivot.z])
-
+    v1 = pt1 - pivot
+    v2 = pt2 - pivot
     angleNA = np.arccos(np.clip(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)), -1.0, 1.0))
     return np.degrees(angleNA)
 
@@ -56,3 +55,9 @@ def avg_position(frames, landmark_index):
     if count == 0:
         return None
     return avg_position/(float(count))
+
+
+def vertical_diff(pt1, pt2):
+    return abs(pt1[1] - pt2[1])
+
+
