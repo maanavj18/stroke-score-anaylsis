@@ -22,6 +22,18 @@ class ArmTest(BaseTest):
         self.baseline_right = None
         self.max_drift_diff = 0.0
 
+
+    def get_score(self):
+        return self.score
+
+    
+    def is_complete(self):
+        return self.status == "COMPLETE"
+
+    
+    def get_status(self):
+        return self.status
+        
     
     def update(self, buffer):
         status = self.get_status()
@@ -92,17 +104,4 @@ class ArmTest(BaseTest):
 
         else:
             return
-        
-
-    
-    def get_score(self):
-        return self.score
-
-    
-    def is_complete(self):
-        return self.status == "COMPLETE"
-
-    
-    def get_status(self):
-        return self.status
 
