@@ -18,6 +18,7 @@ class SmileTest(BaseTest):
         self.countdown_start = None
         self.start_time = None
         self.max_asymmetry = 0.0
+        self.last_print = -1
     
     def get_score(self):
         return self.score
@@ -31,14 +32,31 @@ class SmileTest(BaseTest):
     def update(self, buffer):
         status = self.status
 
+        latest = buffer.get_latest()
+        if latest is None or latest.face_landmarks is None:
+            return
+        landmark = latest.face_landmarks
+
         match status:
             case "WAITING":
-                pass
-            case "COUNTDOWN_START":
-                pass
+                self.status = "COUNTDOWN"
+                self.countdown_start = latest.timestamp
+                print("COUNTDOWN STARTING\n")
+
+            case "COUNTDOWN":
+                current_second = int(latest.timestamp - self.countdown_start)
+                if current_second != self.last_print and current_second > 0:
+                    print(f"{current_second}")
+
+                    if current_second >= self.COUNTDOWN_TIME:
+                        self.status = "SMILING"
+                        self.start_time = latest.timestamp
+                
             case "SMILING":
                 pass
             case "COMPLETE":
                 pass
+            case _ :
+                pass
 
-        pass
+        
