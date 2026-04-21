@@ -1,5 +1,5 @@
 from base_test import BaseTest
-from calculations import avg_position, joint_angle, distance, position, velocity, vertical_diff
+from calculations import  joint_angle, position, vertical_diff, face_position
 
 class ArmTest(BaseTest):
 
@@ -8,6 +8,7 @@ class ArmTest(BaseTest):
     DROP_THRESHOLD = 0.2
     STRAIGHT_ARM_THRESHOLD = 160
     HORIZONTAL_THRESHOLD = 0.1
+    EYE_CLOSED_THRESHOLD = 0.02
 
 
     def __init__(self):
@@ -21,6 +22,7 @@ class ArmTest(BaseTest):
         self.baseline_left = None
         self.baseline_right = None
         self.max_drift_diff = 0.0
+        self.last_eye_warning = 0.0
 
 
     def get_score(self):
@@ -40,11 +42,22 @@ class ArmTest(BaseTest):
         window = buffer.get_window(2)
 
         latest = buffer.get_latest()
-        if latest is None or latest.pose_world_landmarks is None:
+        if latest is None or latest.pose_world_landmarks is None or latest.face_landmarks is None:
             return
         landmark = latest.pose_world_landmarks
+        face_landmark = latest.face_landmarks
 
-        
+        eyeLU = face_position(face_landmark, 159)
+        eyeLL = face_position(face_landmark, 145)
+        eyeRU = face_position(face_landmark, 386)
+        eyeRL = face_position(face_landmark, 374)
+
+        eyeLDiff = abs(eyeLL[1] - eyeLU[1])
+        eyeRDiff = abs(eyeRL[1] - eyeRU[1])
+
+        eyeCheck = eyeLDiff <= self.EYE_CLOSED_THRESHOLD and eyeRDiff <= self.EYE_CLOSED_THRESHOLD
+
+
         match status:
             case "WAITING":
                 shoulderL = position(landmark, 11)
@@ -53,12 +66,13 @@ class ArmTest(BaseTest):
                 elbowR = position(landmark, 14)
                 wristL = position(landmark, 15)
                 wristR = position(landmark, 16)
+                
 
                 check1 = vertical_diff(wristL, wristR) <= self.HORIZONTAL_THRESHOLD
                 check2 = (vertical_diff(wristL, shoulderL) <= self.HORIZONTAL_THRESHOLD) and (vertical_diff(wristR, shoulderR) <= self.HORIZONTAL_THRESHOLD)
                 check3 = (joint_angle(wristL, elbowL, shoulderL) >= self.STRAIGHT_ARM_THRESHOLD) and (joint_angle(wristR, elbowR, shoulderR) >= self.STRAIGHT_ARM_THRESHOLD)
 
-                if check1 and check2 and check3:
+                if check1 and check2 and check3 and eyeCheck:
                     self.status = "RUNNING"
                     self.start_time = latest.timestamp
                     self.baseline_left = wristL[1]
@@ -66,14 +80,12 @@ class ArmTest(BaseTest):
                 
             
             case "RUNNING":
-                latest = buffer.get_latest()
-                if latest is None or latest.pose_world_landmarks is None:
-                    return
-                landmark = latest.pose_world_landmarks
+                if not eyeCheck and latest.timestamp - self.last_eye_warning >= 1:
+                    print("Warning: eyes are open\n")
+                    self.last_eye_warning = latest.timestamp
 
                 wristL = position(landmark, 15)
                 wristR = position(landmark, 16)
-            
             
                 leftDrift = wristL[1] - self.baseline_left
                 rightDrift = wristR[1] - self.baseline_right
@@ -84,7 +96,7 @@ class ArmTest(BaseTest):
 
                 checkTime = latest.timestamp - self.start_time >= self.DURATION
                 checkEarlyDrop = abs(leftDrift) <= self.DROP_THRESHOLD and abs(rightDrift) <= self.DROP_THRESHOLD
-                
+
                 if not checkEarlyDrop:
                     self.score = "FAIL"
                     self.status = "COMPLETE"
