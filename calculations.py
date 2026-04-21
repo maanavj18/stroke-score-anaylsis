@@ -60,4 +60,9 @@ def avg_position(frames, landmark_index):
 def vertical_diff(pt1, pt2):
     return abs(pt1[1] - pt2[1])
 
+def face_position(face_landmarks, index):
+    pt = face_landmarks.landmark[index]
+    ptNumpy = np.arry[(pt.x, pt.y, pt.z)]
+    return ptNumpy
+
 
