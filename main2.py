@@ -4,23 +4,18 @@ import mediapipe as mp
 from vision import VisionLayer
 from frame_buffer import FrameBuffer
 from arm_test import ArmTest
-from smile_test import SmileTest
 
-def main():
+
+def main2():
     vision = VisionLayer()
     vision.start()
 
-    import time
-    print("Get into position. Starting in 10 seconds...")
-    time.sleep(5)  
     buffer = FrameBuffer()
-
-    tests = [ArmTest()]
-    current = 0
+    arm_test = ArmTest()
 
     print("Vision layer started. Press q to quit.")
 
-    last_display = None
+    last_display = None  # hold last valid frame
 
     while True:
         frame_data = vision.get_latest_frame()
@@ -28,18 +23,17 @@ def main():
         if frame_data is not None and frame_data.raw_frame is not None:
             last_display = frame_data.raw_frame.copy()
             buffer.add(frame_data)
+            arm_test.update(buffer)
+            
+            if frame_data.timestamp % 3 <= 0.033:
+                window = buffer.get_window(5)
+                print(f"Buffer size: {len(window)} frames | oldest: {round(window[0].timestamp % 100, 2)} | newest: {round(window[-1].timestamp % 100, 2)}")
 
-            if current < len(tests):
-                tests[current].update(buffer)
-                if frame_data.timestamp % 3 <= 0.033:
-                    pass
-                    #print(f"Test: {type(tests[current]).__name__} | Status: {tests[current].get_status()} | Score: {tests[current].get_score()}")
-                if tests[current].is_complete():
-                    print(f"\n--- {type(tests[current]).__name__} COMPLETE --- Score: {tests[current].get_score()}\n")
-                    current += 1
-            else:
-                print("All tests complete")
-                break
+            pose  = "YES" if frame_data.pose_landmarks is not None else "NO"
+            face  = "YES" if frame_data.face_landmarks is not None else "NO"
+            lhand = "YES" if frame_data.left_hand is not None else "NO"
+            rhand = "YES" if frame_data.right_hand is not None else "NO"
+            #print(f"pose: {pose} | face: {face} | left_hand: {lhand} | right_hand: {rhand}")
 
             if frame_data.pose_landmarks:
                 mp.solutions.drawing_utils.draw_landmarks(
@@ -49,13 +43,14 @@ def main():
                 )
 
         if last_display is not None:
-            cv2.imshow("Stroke Assessment", last_display)
+            cv2.imshow("Vision Layer Test", last_display)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     vision.stop()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()

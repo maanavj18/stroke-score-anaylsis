@@ -37,7 +37,7 @@ def velocity(frames, landmark_index):
     return avg_speed
 
 def position(landmark, index):
-    pt = landmark[index]
+    pt = landmark.landmark[index]
     position = np.array([pt.x, pt.y, pt.z])
     return position
 
@@ -54,7 +54,7 @@ def avg_position(frames, landmark_index):
 
     if count == 0:
         return None
-    return avg_position/(float(count))
+    return avg_pos/(float(count))
 
 
 def vertical_diff(pt1, pt2):
@@ -62,7 +62,10 @@ def vertical_diff(pt1, pt2):
 
 def face_position(face_landmarks, index):
     pt = face_landmarks.landmark[index]
-    ptNumpy = np.arry[(pt.x, pt.y, pt.z)]
+    ptNumpy = np.array([pt.x, pt.y, pt.z])
     return ptNumpy
+
+def is_visible(landmark, index, threshold=0.5):
+    return landmark.landmark[index].visibility >= threshold
 
 
